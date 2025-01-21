@@ -1,37 +1,67 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Alert } from "react-native";
 import Input from "./Input";
 import { useState } from "react";
 import Button from "../ui/Button";
 import { getFormattedDate } from "../../util/date";
+import { GlobalStyles } from "../../constants/styles";
 
 function ExpenseForm({ oncancel, onSubmit, isEditing, defaultValues }) {
-  const [inputValues, setInputValues] = useState({
-    amount: defaultValues ? defaultValues.amount.toString() : "",
-    date: defaultValues ? getFormattedDate(defaultValues.date) : "",
-    description: defaultValues ? defaultValues.description : "",
+  const [inputs, setInputs] = useState({
+    amount: {
+      value: defaultValues ? defaultValues.amount.toString() : "",
+      isValid: true,
+    },
+    date: {
+      value: defaultValues ? getFormattedDate(defaultValues.date) : "",
+      isValid: true,
+    },
+    description: {
+      value: defaultValues ? defaultValues.description : "",
+      isValid: true,
+    },
   });
 
   function inputChagedHandler(inputIdentifier, enterdValue) {
-    setInputValues((currentInputValues) => {
-      return { ...currentInputValues, [inputIdentifier]: enterdValue };
+    setInputs((currentInputValues) => {
+      return {
+        ...currentInputValues,
+        [inputIdentifier]: { value: enterdValue, isValid: true },
+      };
     });
   }
 
   function submitHandler() {
     const expenseData = {
-      amount: +inputValues.amount,
-      date: new Date(inputValues.date),
-      description: inputValues.description,
+      amount: +inputs.amount.value,
+      date: new Date(inputs.date.value),
+      description: inputs.description.value,
     };
     const amountIsValid = !isNaN(expenseData.amount) && expenseData.amount > 0;
     const dateIsValid = expenseData.date.toString() !== "Invalid Date";
     const descriptionIsValid = expenseData.description.trim().length > 0;
     if (!amountIsValid || !dateIsValid || !descriptionIsValid) {
+      // Alert.alert("Invalid input", "Please check your input values");
+      setInputs((curInput) => {
+        return {
+          amount: { value: curInput.amount.value, isValid: amountIsValid },
+          date: { value: curInput.date.value, isValid: dateIsValid },
+          description: {
+            value: curInput.description.value,
+            isValid: descriptionIsValid,
+          },
+        };
+      });
+
       return;
     }
 
     onSubmit(expenseData);
   }
+
+  const formIsInvalid =
+    !inputs.amount.isValid ||
+    !inputs.date.isValid ||
+    !inputs.description.isValid;
   return (
     <View style={styles.form}>
       <Text style={styles.title}>Your Expense</Text>
@@ -42,8 +72,9 @@ function ExpenseForm({ oncancel, onSubmit, isEditing, defaultValues }) {
           textInputConfig={{
             keyboardType: "decimal-pad",
             onChangeText: inputChagedHandler.bind(this, "amount"),
-            value: inputValues.amount,
+            value: inputs.amount.value,
           }}
+          inValid={!inputs.amount.isValid}
         />
         <Input
           lable="Date"
@@ -52,8 +83,9 @@ function ExpenseForm({ oncancel, onSubmit, isEditing, defaultValues }) {
             placeholder: "YYYY-MM-DD",
             maxLength: 10,
             onChangeText: inputChagedHandler.bind(this, "date"),
-            value: inputValues.date,
+            value: inputs.date.value,
           }}
+          inValid={!inputs.date.isValid}
         />
       </View>
 
@@ -64,9 +96,15 @@ function ExpenseForm({ oncancel, onSubmit, isEditing, defaultValues }) {
           //   autoCapitalize: "none",
           //   autoCorrect:false // default is true
           onChangeText: inputChagedHandler.bind(this, "description"),
-          value: inputValues.description,
+          value: inputs.description.value,
         }}
+        inValid={!inputs.description.isValid}
       />
+      {formIsInvalid && (
+        <Text style={styles.errorText}>
+          Invalid input values - please check your entered data!
+        </Text>
+      )}
       <View style={styles.buttons}>
         <Button mode="flat" onPress={oncancel} style={styles.button}>
           Cancel
@@ -109,5 +147,10 @@ const styles = StyleSheet.create({
     minWidth: 120,
     marginHorizontal: 8,
     overflow: "hidden",
+  },
+  errorText: {
+    textAlign: "center",
+    color: GlobalStyles.Colors.error500,
+    margin: 8,
   },
 });
