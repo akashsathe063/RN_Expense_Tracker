@@ -4,7 +4,8 @@ export function getFormattedDate(date) {
    * interpolation with following template syntax ``
    * here which we have modern javascript
    */
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  // return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  return date.toISOString().slice(0, 10);
 }
 
 export function getDateMinusDays(date, days) {
